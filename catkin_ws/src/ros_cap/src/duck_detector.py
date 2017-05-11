@@ -123,7 +123,10 @@ class BlobColor():
         alto_pato = 3.5
         center_x = x+(w/2)
         center_y = y+(h/2)
-        center_z = (fx*ancho_pato)/w
+        if w == 0:
+            center_z = 1000000
+        else:
+            center_z = (fx*ancho_pato)/w
         cero = (imagen_final.width/2)
         pos_rel = center_x - cero
         rate = rospy.Rate(30)

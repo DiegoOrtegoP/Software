@@ -20,18 +20,23 @@ class Controller():
     def __init__(self):
 
         self.joy_subscriber = rospy.Subscriber('/duckiebot/possible_cmd', Twist2DStamped, self._process) 
-        self.pos_subscriber = rospy.Subscriber('/duckiebot/posicionPato', Point, )
+        self.pos_subscriber = rospy.Subscriber('/duckiebot/posicionPato', Point, self.guardar_posicion)
         self.wheels_publisher = rospy.Publisher('/duckiebot/wheels_driver_node/car_cmd', Twist2DStamped, queue_size=1)
+        self.posicion = 100
 
 
-    def _process(self,cmd,pos):
+    def guardar_posicion(self,dist):
+        self.posicion = dist.z
+
+
+    def _process(self,mov):
         msg = Twist2DStamped()
-        if pos.z <= 10:
+        if self.posicion <= 10:
             msg.omega = 0
             msg.v = 0
         else:
-            msg.omega = cmd.omega
-            msg.v = cmd.v
+            msg.omega = mov.omega
+            msg.v = mov.v
         self.wheels_publisher.publish(msg)
         
 def main():
