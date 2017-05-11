@@ -14,7 +14,7 @@ def main():
 
 
 def process_callback(msg):
-    base_pub = rospy.Publisher('/duckiebot/wheels_driver_node/car_cmd', Twist2DStamped, queue_size=1)
+    base_pub = rospy.Publisher('/duckiebot/possible_cmd', Twist2DStamped, queue_size=1)
     x = msg.axes[0]
     y = msg.axes[4]
     msg2 = Twist2DStamped()
