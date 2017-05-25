@@ -47,7 +47,7 @@ class BlobColor():
         #Ultima imagen adquirida
         self.cv_image = Image()
 
-        self.min_area = 100
+        self.min_area = 25
 
         self.image_publisher = rospy.Publisher('/duckiebot/camera_node/segment_image/patos', Image, queue_size=1)
         self.coordenadas_publisher = rospy.Publisher('/duckiebot/posicionPato', Point, queue_size=1)

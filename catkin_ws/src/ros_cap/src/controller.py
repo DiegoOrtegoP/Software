@@ -31,7 +31,7 @@ class Controller():
 
     def _process(self,mov):
         msg = Twist2DStamped()
-        if self.posicion <= 10:
+        if self.posicion <= 30:
             msg.omega = 0
             msg.v = 0
         else:
