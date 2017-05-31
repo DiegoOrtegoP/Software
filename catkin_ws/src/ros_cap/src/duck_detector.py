@@ -20,8 +20,8 @@ import numpy as np
 # define range of blue color in HSV
 #colores que funcionan:
 
-lower_yellow = np.array([21,160,129])
-upper_yellow = np.array([32,255,255])
+lower_yellow = np.array([25,110,110])
+upper_yellow = np.array([35,255,255])
 lower_blue = np.array([110,30,30])
 upper_blue = np.array([130,255,255])
 

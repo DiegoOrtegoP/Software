@@ -11,7 +11,7 @@ from duckietown_msgs.msg import  Twist2DStamped, BoolStamped
 from geometry_msgs.msg import Point
 from std_srvs.srv import Empty, EmptyResponse
 
-
+distancia_minima = 60
 
 import numpy as np
 
@@ -31,8 +31,8 @@ class Controller():
 
     def _process(self,mov):
         msg = Twist2DStamped()
-        if self.posicion <= 30:
-            msg.omega = 0
+        if self.posicion <= distancia_minima:
+            msg.omega = mov.omega
             msg.v = 0
         else:
             msg.omega = mov.omega
