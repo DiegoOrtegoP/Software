@@ -11,7 +11,7 @@ from duckietown_msgs.msg import  Twist2DStamped, BoolStamped
 from geometry_msgs.msg import Point
 from std_srvs.srv import Empty, EmptyResponse
 
-distancia_minima = 60
+distancia_minima = 70
 
 import numpy as np
 
