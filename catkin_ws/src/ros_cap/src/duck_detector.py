@@ -129,13 +129,11 @@ class BlobColor():
             center_z = (fx*ancho_pato)/w
         cero = (imagen_final.width/2)
         pos_rel = center_x - cero
-        #rate = rospy.Rate(30)
         msg = Point()
         msg.x = center_x
         msg.y = center_y
         msg.z = center_z
         self.coordenadas_publisher.publish(msg)
-        #rate.sleep()
         
 def main():
 
