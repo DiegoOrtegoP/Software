@@ -20,7 +20,7 @@ import numpy as np
 # define range of blue color in HSV
 #colores que funcionan:
 
-lower_yellow = np.array([25,110,110])
+lower_yellow = np.array([20,150,130])
 upper_yellow = np.array([35,255,255])
 lower_blue = np.array([110,30,30])
 upper_blue = np.array([130,255,255])
@@ -39,7 +39,7 @@ class BlobColor():
 
 
         #Subscribirce al topico "/duckiebot/camera_node/image/raw"
-        self.image_subscriber = rospy.Subscriber('/duckiebot/camera_node/image/raw', Image, self._process_image) 
+        self.image_subscriber = rospy.Subscriber('/duckiebot/camera_node/image/rect', Image, self._process_image) 
 
         #Clase necesaria para transformar el tipo de imagen
         self.bridge = CvBridge()
@@ -49,8 +49,8 @@ class BlobColor():
 
         self.min_area = 25
 
-        self.image_publisher = rospy.Publisher('/duckiebot/camera_node/segment_image/patos', Image, queue_size=1)
-        self.coordenadas_publisher = rospy.Publisher('/duckiebot/posicionPato', Point, queue_size=1)
+        self.image_publisher = rospy.Publisher('/duckiebot/camera_node/segment_image/patos', Image, queue_size=10)
+        self.coordenadas_publisher = rospy.Publisher('/duckiebot/posicionPato', Point, queue_size=10)
 
 
     def _process_image(self,img):
@@ -129,13 +129,13 @@ class BlobColor():
             center_z = (fx*ancho_pato)/w
         cero = (imagen_final.width/2)
         pos_rel = center_x - cero
-        rate = rospy.Rate(30)
+        #rate = rospy.Rate(30)
         msg = Point()
         msg.x = center_x
         msg.y = center_y
         msg.z = center_z
         self.coordenadas_publisher.publish(msg)
-        rate.sleep()
+        #rate.sleep()
         
 def main():
 
