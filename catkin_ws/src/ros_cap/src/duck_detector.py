@@ -2,144 +2,133 @@
 
 
 import math
-import rospy
-# esa cosa
-from duckietown_msgs.msg import  Twist2DStamped, BoolStamped
+import numpy as np
 
-# import rospkg
 import cv2
+from cv_bridge import CvBridge, CvBridgeError
 
+import rospy
+
+from duckietown_msgs.msg import Twist2DStamped, BoolStamped
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
 from std_srvs.srv import Empty, EmptyResponse
 
-from cv_bridge import CvBridge, CvBridgeError
+# Colors:
 
-import numpy as np
+lower_red = np.array([0, 50, 50])
+upper_red = np.array([10, 255, 255])
+lower_orange = np.array([10, 50, 50])
+upper_orange = np.array([20, 255, 255])
+lower_yellow = np.array([20, 150, 130])
+upper_yellow = np.array([35, 255, 255])
+lower_green = np.array([35, 50, 50])
+upper_green = np.array([100, 255, 255])
+lower_blue = np.array([100, 50, 50])
+upper_blue = np.array([130, 255, 255])
+lower_purple = np.array([130, 50, 50])
+upper_purple = np.array([179, 255, 255])
 
-# define range of blue color in HSV
-#colores que funcionan:
+# Variables:
 
-lower_yellow = np.array([20,150,130])
-upper_yellow = np.array([35,255,255])
-lower_blue = np.array([110,30,30])
-upper_blue = np.array([130,255,255])
+dimensions_kernel = 5
+iterations_erode = 2
+iterations_dilate = 2
 
-#colores que no:
+area_min = 30
 
-lower_red = np.array([0,50,50])
-upper_red = np.array([36,255,255])
-lower_green = np.array([54,50,50])
-upper_green = np.array([109,255,255])
+fx = 336.79653744960046
+fy = 336.0126772357778
+
+duck_width = 4.0
+duck_height = 3.5
 
 
-class BlobColor():
+class DuckDetector():
 
     def __init__(self):
 
+        self.image_subscriber = rospy.Subscriber('/duckiebot/camera_node/image/rect', Image, self._process_image)
 
-        #Subscribirce al topico "/duckiebot/camera_node/image/raw"
-        self.image_subscriber = rospy.Subscriber('/duckiebot/camera_node/image/rect', Image, self._process_image) 
+        self.image_publisher = rospy.Publisher('/duckiebot/camera_node/image/rect/ducks', Image, queue_size=1)
+        self.coordinates_publisher = rospy.Publisher('/duckiebot/duck_point', Point, queue_size=1)
 
-        #Clase necesaria para transformar el tipo de imagen
         self.bridge = CvBridge()
 
-        #Ultima imagen adquirida
+        self.kernel = np.ones((dimensions_kernel, dimensions_kernel), np.uint8)
+
         self.cv_image = Image()
+        self.point = Point()
 
-        self.min_area = 25
+        print('Running DuckDetector Node')
+        print('--')
+        print('Subscribed to topic /duckiebot/camera_node/image/rect')
+        print('--')
+        print('Publishing on topic /duckiebot/camera_node/image/rect/ducks')
+        print('Publishing on topic /duckiebot/duck_point')
 
-        self.image_publisher = rospy.Publisher('/duckiebot/camera_node/segment_image/patos', Image, queue_size=10)
-        self.coordenadas_publisher = rospy.Publisher('/duckiebot/posicionPato', Point, queue_size=10)
-
-
-    def _process_image(self,img):
+    def _process_image(self, img):
         
-        #Se cambiar mensage tipo ros a imagen opencv
+        # Change image format
         try:
             self.cv_image = self.bridge.imgmsg_to_cv2(img, "bgr8")
         except CvBridgeError as e:
             print(e)
 
-        #Se deja en frame la imagen actual
-        frame = self.cv_image
+        # Create mask
+        mask = cv2.inRange(cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2HSV), lower_yellow, upper_yellow)
 
-        #Cambiar tipo de color de BGR a HSV
-        color_space = cv2.COLOR_BGR2HSV
-        image_out = cv2.cvtColor(frame, color_space)
-        # Filtrar colores de la imagen en el rango utilizando 
-        mask = cv2.inRange(image_out, lower_yellow, upper_yellow)
+        # Morphological operations on mask
+        mask = cv2.erode(mask, self.kernel, iterations=iterations_erode)
+        mask = cv2.dilate(mask, self.kernel, iterations=iterations_dilate)
 
-        # Bitwise-AND mask and original image
-        segment_image = cv2.bitwise_and(frame,frame, mask= mask)
-        # Kernel y cosas
+        # Parameters biggest rectangle
+        x_max = 0
+        y_max = 0
+        w_max = 0
+        h_max = 0
+        area_max = 0
 
-        kernel = np.ones((5,5),np.uint8)
+        # Rectangles data
+        image, contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-        #Operacion morfologica erode
-        mask = cv2.erode(mask, kernel, iterations = 2)
-        
-        #Operacion morfologica dilate
-        mask = cv2.dilate(mask, kernel, iterations = 5)
-
-        image, contours, hierarchy = cv2.findContours(mask,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-        xmax=0
-        ymax=0
-        wmax=0
-        hmax=0
-        areamax=0
         for cnt in contours:
-            #Obtener rectangulo
-            x,y,w,h = cv2.boundingRect(cnt)
+            # Parameters on the rectangle
+            x, y, w, h = cv2.boundingRect(cnt)
             area = w*h
-            if area > areamax:
-                areamax = area
-                xmax=x
-                ymax=y
-                wmax=w
-                hmax=h
-            #Filtrar por area minima
-            if w*h > self.min_area:
 
-                #Dibujar un rectangulo en la imagen
-                x1 = x
-                y1 = y
-                x2 = x+w
-                y2 = y+h
-                cv2.rectangle(frame, (x1,y1), (x2,y2), (255,0,255), 2)
+            # Filter by minimum area
+            if area > area_min:
+                cv2.rectangle(self.cv_image, (x, y), (x + w, y + h), (80, 20, 77), 2)
 
-        #Publicar frame
-        imagen_final = self.bridge.cv2_to_imgmsg(frame, "bgr8")
-        self.image_publisher.publish(imagen_final)
+                # Find biggest rectangle
+                if area > area_max:
+                    area_max = area
+                    x_max = x
+                    y_max = y
+                    w_max = w
+                    h_max = h
 
-        #Publicar Point center de mayor tamanio
-        x = xmax
-        y = ymax
-        w = wmax
-        h = hmax
-        fx = 336.79653744960046
-        fy = 336.0126772357778
-        ancho_pato = 4
-        alto_pato = 3.5
-        center_x = x+(w/2)
-        center_y = y+(h/2)
-        if w == 0:
-            center_z = 1000000
-        else:
-            center_z = (fx*ancho_pato)/w
-        cero = (imagen_final.width/2)
-        pos_rel = center_x - cero
-        msg = Point()
-        msg.x = center_x
-        msg.y = center_y
-        msg.z = center_z
-        self.coordenadas_publisher.publish(msg)
-        
+        # Publish image with rectangles
+        self.image_publisher.publish(self.bridge.cv2_to_imgmsg(self.cv_image, "bgr8"))
+
+        # Position of the duck in the image
+        self.point.x = x_max + w_max/2.0
+        self.point.y = y_max + h_max/2.0
+        try:
+            self.point.z = ((fx * duck_width) * h_max + (fy * duck_height) * w_max) / (2.0 * area_max)
+        except ZeroDivisionError:
+            self.point.z = float('Inf')
+
+        # Publish position
+        self.coordinates_publisher.publish(self.point)
+
+
 def main():
 
-    rospy.init_node('BlobColor')
+    rospy.init_node('DuckDetector')
 
-    BlobColor()
+    DuckDetector()
 
     rospy.spin()
 
