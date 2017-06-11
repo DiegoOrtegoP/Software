@@ -37,11 +37,15 @@ iterations_dilate = 2
 
 area_min = 30
 
-read_data = True
+read_data = True    # Whether you'd like to read the data file with the camera's updated focal distance values
 data_location = 'c:\duckietown/catkin_ws/src/duckietown/config/baseline/calibration/camera_intrinsic/duckiebot.yaml'
+fx_over_fy_relation = 0.5   # In what proportion you'd like to use the focal distances from the x and y axes
 
-duck_width = 4.0
-duck_height = 3.5
+duck_width = 4.0    # Centimeters
+duck_height = 3.5   # Centimeters
+
+print_position = True   # Prints the coordinates of the duck
+only_z = True   # Prints z coordinate only
 
 
 class DuckDetector():
@@ -87,7 +91,7 @@ class DuckDetector():
             self.fy = float(self.fy)
         else:
             self.fx = 336.79653744960046
-            self.fy = 336.0126772357778
+            self.fy = 336.01267723577780
 
         print('Running DuckDetector Node')
         print('--')
@@ -145,12 +149,22 @@ class DuckDetector():
         self.point.x = x_max + w_max/2.0
         self.point.y = y_max + h_max/2.0
         try:
-            self.point.z = ((self.fx * duck_width) * h_max + (self.fy * duck_height) * w_max) / (2.0 * area_max)
+            z_x = (self.fx * duck_width * h_max) / area_max
+            z_y = (self.fy * duck_height * w_max) / area_max
+            self.point.z = fx_over_fy_relation * z_x + (1 - fx_over_fy_relation) * z_y
         except ZeroDivisionError:
             self.point.z = float('Inf')
 
         # Publish position
         self.coordinates_publisher.publish(self.point)
+
+        # Print position values
+        if print_position:
+            print('--')
+            if not only_z:
+                print('x= '+str(self.point.x))
+                print('y= '+str(self.point.y))
+            print('z= '+str(self.point.z))
 
 
 def main():
