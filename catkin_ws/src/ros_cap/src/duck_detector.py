@@ -37,8 +37,8 @@ iterations_dilate = 2
 
 area_min = 30
 
-fx = 336.79653744960046
-fy = 336.0126772357778
+read_data = True
+data_location = 'c:\duckietown/catkin_ws/src/duckietown/config/baseline/calibration/camera_intrinsic/duckiebot.yaml'
 
 duck_width = 4.0
 duck_height = 3.5
@@ -59,6 +59,35 @@ class DuckDetector():
 
         self.cv_image = Image()
         self.point = Point()
+
+        if read_data:
+            calibration = open(data_location, 'r')
+            i = 0
+            self.fx = ''
+            self.fy = ''
+            for linea in calibration:
+                if i == 2:
+                    a = 0
+                    for l in linea:
+                        if l == ',':
+                            a = 0
+                        if a == 1:
+                            self.fx += l
+                        if l == '[':
+                            a = 1
+                if i == 3:
+                    a = 1
+                    for l in linea:
+                        if l == ',':
+                            a = 0
+                        if a == 1:
+                            self.fy += l
+            calibration.close()
+            self.fx = float(self.fx)
+            self.fy = float(self.fy)
+        else:
+            self.fx = 336.79653744960046
+            self.fy = 336.0126772357778
 
         print('Running DuckDetector Node')
         print('--')
@@ -116,7 +145,7 @@ class DuckDetector():
         self.point.x = x_max + w_max/2.0
         self.point.y = y_max + h_max/2.0
         try:
-            self.point.z = ((fx * duck_width) * h_max + (fy * duck_height) * w_max) / (2.0 * area_max)
+            self.point.z = ((self.fx * duck_width) * h_max + (self.fy * duck_height) * w_max) / (2.0 * area_max)
         except ZeroDivisionError:
             self.point.z = float('Inf')
 
