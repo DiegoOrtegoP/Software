@@ -29,6 +29,9 @@ class Joystick():
         left_stick = joystick_data.axes[0]
         right_stick = joystick_data.axes[4]
 
+        print(left_stick)
+        print(right_stick)
+
         self.orders.omega = left_stick*10
         if joystick_data.axes[5] < 0:
             self.orders.v = right_stick*10
