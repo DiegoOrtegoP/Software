@@ -37,7 +37,7 @@ iterations_dilate = 2
 
 area_min = 30
 
-read_data = False    # Whether you'd like to read the data file with the camera's updated focal distance values
+read_data = True    # Whether you'd like to read the data file with the camera's updated focal distance values
 data_location = '/home/duckiebot/duckietown/catkin_ws/src/duckietown/config/baseline/calibration/camera_intrinsic/duckiebot.yaml'
 fx_over_fy_relation = 0.5   # In what proportion you'd like to use the focal distances from the x and y axes
 
