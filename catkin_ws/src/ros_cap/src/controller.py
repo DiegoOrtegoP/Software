@@ -13,14 +13,19 @@ from std_srvs.srv import Empty, EmptyResponse
 # Variables
 
 distance_min = 70
+alternative_detector = False
 
 
 class Controller():
 
     def __init__(self):
 
-        self.position_subscriber = rospy.Subscriber('/duckiebot/duck_point', Point, self.save_position)
-        self.joystick_subscriber = rospy.Subscriber('/duckiebot/joystick_orders', Twist2DStamped, self._process)
+        if alternative_detector:
+            self.position_subscriber = rospy.Subscriber('/duckiebot/punto', Point, self.save_position)
+            self.joystick_subscriber = rospy.Subscriber('/duckiebot/joystick_orders', Twist2DStamped, self._process)
+        else:
+            self.position_subscriber = rospy.Subscriber('/duckiebot/duck_point', Point, self.save_position)
+            self.joystick_subscriber = rospy.Subscriber('/duckiebot/joystick_orders', Twist2DStamped, self._process)
 
         self.wheels_publisher = rospy.Publisher('/duckiebot/wheels_driver_node/car_cmd', Twist2DStamped, queue_size=1)
 
